@@ -5,44 +5,37 @@ import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 
 const RegisterPage = () => {
-  const [userData, setUserData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    displayName: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUserData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
   
-    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(userData.password)) {
+    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
       setError("Password must be at least 8 characters long, include a number and an uppercase letter.");
       return;
     }
   
-    if (userData.password !== userData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
   
     try {
       const regResponse = await axios.post('/Auth/register', {
-        email: userData.email,
-        password: userData.password,
-        displayName: userData.displayName
+        email,
+        passwordHash: password,
+        displayName
       });
       console.log('Registered:', regResponse.data);
       const loginResponse = await axios.post('/Auth/login', {
-        email: userData.email,
-        password: userData.password
+        email,
+        password
       });
       if (loginResponse.status === 200) {
         localStorage.setItem('accessToken', loginResponse.data.jwtToken);
@@ -85,8 +78,8 @@ const RegisterPage = () => {
             variant="outlined"
             type="email"
             name="email"
-            value={userData.email}
-            onChange={handleChange}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             fullWidth
             margin="normal"
             required
@@ -96,8 +89,8 @@ const RegisterPage = () => {
             variant="outlined"
             type="password"
             name="password"
-            value={userData.password}
-            onChange={handleChange}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             fullWidth
             margin="normal"
             required
@@ -107,8 +100,8 @@ const RegisterPage = () => {
             variant="outlined"
             type="password"
             name="confirmPassword"
-            value={userData.confirmPassword}
-            onChange={handleChange}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
             margin="normal"
             required
@@ -118,8 +111,8 @@ const RegisterPage = () => {
             variant="outlined"
             type="text"
             name="displayName"
-            value={userData.displayName}
-            onChange={handleChange}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             fullWidth
             margin="normal"
             required
