@@ -4,7 +4,7 @@ import { Container, AppBar, Toolbar, Button, Typography, TextField, Link, Select
 import axios from '../../api/axios';
 import useAuth from '../../hooks/useAuth';
 
-const Navigation = ({ handleLogout }) => (
+const Navigation = () => (
   <AppBar position="static">
     <Toolbar>
       <Typography variant="h6" sx={{ flexGrow: 1 }}>
@@ -29,6 +29,7 @@ const Navigation = ({ handleLogout }) => (
 const CreatePaymentPage = () => {
   const { id } = useParams();
   const [paymentPage, setPaymentPage] = useState({
+    title: '',
     description: '',
     amountUSD: '',
     amountCrypto: '',
@@ -53,6 +54,7 @@ const CreatePaymentPage = () => {
           navigate('/dashboard');
         } else {
           setPaymentPage({
+            title: response.data.title,
             description: response.data.description,
             amountUSD: response.data.amountDetails.amountUSD,
             amountCrypto: response.data.amountDetails.amountCrypto,
@@ -140,6 +142,7 @@ const CreatePaymentPage = () => {
 
     try {
       const payload = {
+        title: paymentPage.title,
         description: paymentPage.description,
         amountUSD: paymentPage.amountUSD,
         amountCrypto: paymentPage.amountCrypto,
@@ -183,6 +186,15 @@ const CreatePaymentPage = () => {
       </Typography>
       {error && <Typography color="error">{error}</Typography>}
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+      <TextField
+          fullWidth
+          label="Title"
+          name="title"
+          value={paymentPage.title}
+          onChange={handleChange}
+          margin="normal"
+          required
+        />
         <TextField
           fullWidth
           label="Description"

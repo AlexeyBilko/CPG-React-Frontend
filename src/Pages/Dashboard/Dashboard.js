@@ -3,6 +3,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Container, AppBar, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Link, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PreviewIcon from '@mui/icons-material/Preview';
 import axios from '../../api/axios';
 import useAuth from '../../hooks/useAuth';
 
@@ -120,6 +121,7 @@ const Dashboard = () => {
           <TableHead>
               <TableRow>
                   <TableCell>ID</TableCell>
+                  <TableCell>Title</TableCell>
                   <TableCell>Description</TableCell>
                   <TableCell>Amount USD</TableCell>
                   <TableCell>Amount Crypto</TableCell>
@@ -131,11 +133,13 @@ const Dashboard = () => {
               {paymentPages.map((page) => (
                   <TableRow key={page.id}>
                       <TableCell>{page.id}</TableCell>
+                      <TableCell>{page.title}</TableCell>
                       <TableCell>{page.description}</TableCell>
                       <TableCell>{page.amountDetails.amountUSD}</TableCell>
                       <TableCell>{page.amountDetails.amountCrypto}</TableCell>
                       <TableCell>{page.amountDetails.currency.currencyCode}</TableCell>
                       <TableCell>
+                          <IconButton onClick={() => navigate(`/payment/${page.id}`)}><PreviewIcon /></IconButton>
                           <IconButton onClick={() => navigate(`/edit-payment-page/${page.id}`)}><EditIcon /></IconButton>
                           <IconButton onClick={() => handleClickOpen(page.id)}><DeleteIcon /></IconButton>
                       </TableCell>

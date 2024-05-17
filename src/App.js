@@ -10,6 +10,10 @@ import RegisterPage from './Pages/AuthPage/RegisterPage';
 import Dashboard from './Pages/Dashboard/Dashboard';
 import CreatePaymentPage from './Pages/Dashboard/CreatePaymentPage';
 import ProfilePage from './Pages/Dashboard/ProfilePage';
+import PaymentPage from './Pages/PaymentPage/PaymentPage';
+import ThankYou from './Pages/PaymentPage/ThankYou';
+import NotFound from './Pages/ErrorPages/NotFound';
+
 
 function App() {
   return (
@@ -22,6 +26,9 @@ function App() {
           <Route path="/profile" element={<ProfilePage />}/>
           <Route path="/create-payment-page" element={<CreatePaymentPage />} />
           <Route path="/edit-payment-page/:id" element={<CreatePaymentPage />} />
+          <Route path="/payment/:id" element={<PaymentPage />} />
+          <Route path="/thank-you" element={<ThankYou />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
   );
