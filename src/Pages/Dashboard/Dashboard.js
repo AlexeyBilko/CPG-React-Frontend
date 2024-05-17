@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Link } from '@mui/material';
+import { Container, AppBar, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Link, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from '../../api/axios';
@@ -31,6 +31,8 @@ const Navigation = ({ handleLogout }) => (
 const Dashboard = () => {
   const [paymentPages, setPaymentPages] = useState([]);
   const [error, setError] = useState('');
+  const [open, setOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
   const auth = useAuth();
   const navigate = useNavigate();
 
@@ -40,11 +42,12 @@ const Dashboard = () => {
         const getUserresponse = await axios.get('/auth/user-details', {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
-        console.log(getUserresponse);
-        const response = await axios.get(`/PaymentPage/allbyuserid/${getUserresponse.data.Id}`, {
+        console.log(getUserresponse.data);
+        const response = await axios.get(`/PaymentPage/allbyuserid/${getUserresponse.data.id}`, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
         setPaymentPages(response.data);
+        console.log(response.data);
       } catch (err) {
         if (err.response && err.response.status === 404) {
           setError('No payment pages found for this user. Please create a new payment page.');
@@ -75,13 +78,23 @@ const Dashboard = () => {
 
   const handleDelete = async (id) => {
     try {
-        await axios.delete(`/paymentpages/payment-pages/${id}`, {
+        await axios.delete(`/PaymentPage/delete/${id}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
         });
         setPaymentPages(prevPages => prevPages.filter(page => page.id !== id));
+        setOpen(false); 
     } catch (err) {
         setError(err.response?.data?.message || 'Failed to delete payment page');
     }
+  };
+
+  const handleClickOpen = (id) => {
+    setDeleteId(id);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
   };
 
   return (
@@ -124,12 +137,33 @@ const Dashboard = () => {
                       <TableCell>{page.amountDetails.currency.currencyCode}</TableCell>
                       <TableCell>
                           <IconButton onClick={() => navigate(`/edit-payment-page/${page.id}`)}><EditIcon /></IconButton>
-                          <IconButton onClick={() => handleDelete(page.id)}><DeleteIcon /></IconButton>
+                          <IconButton onClick={() => handleClickOpen(page.id)}><DeleteIcon /></IconButton>
                       </TableCell>
                   </TableRow>
               ))}
           </TableBody>
       </Table>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">{"Delete Payment Page"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this payment page? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={() => handleDelete(deleteId)} color="primary" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

@@ -6,7 +6,7 @@ const useAuth = () => {
   const [auth, setAuth] = useState({
     accessToken: localStorage.getItem('accessToken'),
     refreshToken: localStorage.getItem('refreshToken'),
-    userId: null
+    userId: localStorage.getItem('userId')
   });
   const navigate = useNavigate();
 
@@ -20,6 +20,7 @@ const useAuth = () => {
         const userResponse = await axios.get('/auth/user-details', {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
+        localStorage.setItem('userId', userResponse.data.id);
         setAuth(auth => ({
           ...auth,
           userId: userResponse.data.id
@@ -35,6 +36,7 @@ const useAuth = () => {
         } catch (refreshError) {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          localStorage.removeItem('userId');
           navigate('/login');
         }
       }

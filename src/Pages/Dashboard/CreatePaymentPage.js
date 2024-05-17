@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Button, Typography, TextField, Link, Select, MenuItem, Box } from '@mui/material';
+import { Container, AppBar, Toolbar, Button, Typography, TextField, Link, Select, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions  } from '@mui/material';
 import axios from '../../api/axios';
 import useAuth from '../../hooks/useAuth';
 
@@ -33,8 +33,10 @@ const CreatePaymentPage = () => {
     amountUSD: '',
     amountCrypto: '',
     currencyCode: 'BTC',
+    pageId: ''
   });
   const [error, setError] = useState('');
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const navigate = useNavigate();
   const auth = useAuth();
 
@@ -44,17 +46,22 @@ const CreatePaymentPage = () => {
         const response = await axios.get(`/PaymentPage/${id}`, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
+        console.log(`fetchPaymentPage reponse data ${response.data}`);
         if (response.data.userId !== auth.userId) {
-            navigate('/dashboard');
-          } else {
-            setPaymentPage({
-              description: response.data.description,
-              amountUSD: response.data.amountDetails.amountUSD,
-              amountCrypto: response.data.amountDetails.amountCrypto,
-              currencyCode: response.data.amountDetails.currency.currencyCode,
-            });
-          }
+          console.log(`fetchPaymentPage reponse data ${response.data}`);
+          console.log(`fetchPaymentPage auth.userId ${auth.userId}`);
+          navigate('/dashboard');
+        } else {
+          setPaymentPage({
+            description: response.data.description,
+            amountUSD: response.data.amountDetails.amountUSD,
+            amountCrypto: response.data.amountDetails.amountCrypto,
+            currencyCode: response.data.amountDetails.currency.currencyCode,
+            pageId: id
+          });
+        }
       } catch (err) {
+        console.error('Failed to fetch payment page:', err);
         setError('Failed to fetch payment page');
         navigate('/dashboard');
       }
@@ -62,6 +69,12 @@ const CreatePaymentPage = () => {
 
     if (id) {
       fetchPaymentPage();
+      console.log('Id found');
+    } else {
+      setPaymentPage(prevState => ({
+        ...prevState,
+        pageId: -1
+      }));
     }
   }, [id, auth.accessToken, auth.userId, navigate]);
 
@@ -130,21 +143,35 @@ const CreatePaymentPage = () => {
         description: paymentPage.description,
         amountUSD: paymentPage.amountUSD,
         amountCrypto: paymentPage.amountCrypto,
-        currencyCode: paymentPage.currencyCode
+        currencyCode: paymentPage.currencyCode,
+        pageId: paymentPage.pageId
       };
 
       if (id) {
-        await axios.put('/PaymentPage/update', payload, {
+        const response = await axios.put('/PaymentPage/update', payload, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
+        console.log(`/PaymentPage/update: ${response}`);
       } else {
-        await axios.post('/PaymentPage/create', payload, {
+        const response = await axios.post('/PaymentPage/create', payload, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
+        console.log(`/PaymentPage/create: ${response}`);
       }
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to save payment page');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`/PaymentPage/delete/${id}`, {
+        headers: { Authorization: `Bearer ${auth.accessToken}` }
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Failed to delete payment page');
     }
   };
 
@@ -201,7 +228,36 @@ const CreatePaymentPage = () => {
         <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
           {id ? 'Update' : 'Create'} Payment Page
         </Button>
+        {id && (
+          <Button
+            variant="contained"
+            color="secondary"
+            sx={{ mt: 2, ml: 2 }}
+            onClick={() => setOpenDeleteDialog(true)}
+          >
+            Delete Payment Page
+          </Button>
+        )}
       </Box>
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this payment page? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="secondary">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
