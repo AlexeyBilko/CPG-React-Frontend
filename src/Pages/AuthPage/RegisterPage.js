@@ -69,7 +69,7 @@ const RegisterPage = () => {
           margin: 'auto' // Centering the form
         }}
       >
-        <Typography component="h1" variant="h5" align="center" sx={{ mb: 3 }}>
+        <Typography component="h1" variant="h5" align="center" sx={{ mb: 3, color: '#003366'  }}>
           Register
         </Typography>
         <form onSubmit={handleRegister} style={{ width: '100%' }}>
@@ -117,7 +117,7 @@ const RegisterPage = () => {
             margin="normal"
             required
           />
-          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2, mb: 2 }}>
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2, mb: 2, bgcolor: '#003366', color: '#FAF8FC' }}>
             Register
           </Button>
           {error && <Typography color="error" style={{ marginTop: '10px' }}>{error}</Typography>}

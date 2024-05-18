@@ -36,7 +36,8 @@ const LoginPage = () => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center', // centers vertically
-      alignItems: 'center' // centers horizontally
+      alignItems: 'center', // centers horizontally
+      color: '#003366', fontFamily: 'Montserrat, sans-serif' 
     }}>
       <Box 
         sx={{ 
@@ -49,7 +50,7 @@ const LoginPage = () => {
           margin: 'auto' // Centering the form
         }}
       >
-        <Typography component="h1" variant="h5" align="center" sx={{ mb: 3 }}>
+        <Typography component="h1" variant="h5" align="center" sx={{ mb: 3, color: '#003366' }}>
           Login
         </Typography>
         <form onSubmit={handleLogin} style={{ width: '100%' }}>
@@ -73,7 +74,7 @@ const LoginPage = () => {
             margin="normal"
             required
           />
-          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2, mb: 2 }}>
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2, mb: 2, bgcolor: '#003366', color: '#FAF8FC' }}>
             Login
           </Button>
           {error && <Typography color="error" style={{ marginTop: '10px' }}>{error}</Typography>}

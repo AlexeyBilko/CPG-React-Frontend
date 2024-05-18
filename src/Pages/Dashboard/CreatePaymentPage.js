@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Button, Typography, TextField, Link, Select, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions  } from '@mui/material';
+import { Container, AppBar, Toolbar, Button, Typography, useMediaQuery, TextField, Link, Select, MenuItem, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Checkbox, FormControlLabel } from '@mui/material';
 import axios from '../../api/axios';
 import useAuth from '../../hooks/useAuth';
+import { useTheme } from '@mui/material/styles';
 
-const Navigation = () => (
-  <AppBar position="static">
+const Navigation = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  return (
+    <AppBar position="static" sx={{ bgcolor: '#FAF8FC' }}>
     <Toolbar>
-      <Typography variant="h6" sx={{ flexGrow: 1 }}>
-        Crypto Payment Gateway
-      </Typography>
-      <Link component={RouterLink} to="/dashboard" color="inherit" sx={{ ml: 2 }}>
-        Dashboard
-      </Link>
-      <Link component={RouterLink} to="/earnings" color="inherit" sx={{ ml: 2 }}>
-        Earnings
-      </Link>
-      <Link component={RouterLink} to="/profile" color="inherit" sx={{ ml: 2 }}>
-        Profile
-      </Link>
-      <Button component={RouterLink} to="/dashboard" variant="contained" color="primary">
-        Back to Dashboard
-      </Button>
-    </Toolbar>
-  </AppBar>
-);
+      {!isMobile && (
+        <Typography variant="h6" sx={{ flexGrow: 1, color: '#003366' }}>
+          Crypto Payment Gateway
+        </Typography>
+      )}
+          <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', mx: 'auto' }}>
+            <Link component={RouterLink} to="/dashboard" color="inherit" sx={{ m: 3, color: '#003366' }}>
+              Dashboard
+            </Link>
+            <Link component={RouterLink} to="/earnings" color="inherit" sx={{ m: 3, color: '#003366' }}>
+              Earnings
+            </Link>
+            <Link component={RouterLink} to="/profile" color="inherit" sx={{ m: 3, color: '#003366' }}>
+              Profile
+            </Link>
+          </Box>
+        <Button component={RouterLink} to="/dashboard" variant="contained" sx={{ m: 2, bgcolor: '#003366', color: '#FAF8FC' }}>
+          Back to Dashboard
+        </Button>
+      </Toolbar>
+    </AppBar>
+  );
+};
 
 const CreatePaymentPage = () => {
   const { id } = useParams();
@@ -34,6 +43,7 @@ const CreatePaymentPage = () => {
     amountUSD: '',
     amountCrypto: '',
     currencyCode: 'BTC',
+    isDonation: false,
     pageId: ''
   });
   const [error, setError] = useState('');
@@ -47,10 +57,7 @@ const CreatePaymentPage = () => {
         const response = await axios.get(`/PaymentPage/${id}`, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
-        console.log(`fetchPaymentPage reponse data ${response.data}`);
         if (response.data.userId !== auth.userId) {
-          console.log(`fetchPaymentPage reponse data ${response.data}`);
-          console.log(`fetchPaymentPage auth.userId ${auth.userId}`);
           navigate('/dashboard');
         } else {
           setPaymentPage({
@@ -59,6 +66,7 @@ const CreatePaymentPage = () => {
             amountUSD: response.data.amountDetails.amountUSD,
             amountCrypto: response.data.amountDetails.amountCrypto,
             currencyCode: response.data.amountDetails.currency.currencyCode,
+            isDonation: response.data.isDonation,
             pageId: id
           });
         }
@@ -71,7 +79,6 @@ const CreatePaymentPage = () => {
 
     if (id) {
       fetchPaymentPage();
-      console.log('Id found');
     } else {
       setPaymentPage(prevState => ({
         ...prevState,
@@ -81,17 +88,17 @@ const CreatePaymentPage = () => {
   }, [id, auth.accessToken, auth.userId, navigate]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, checked, type } = e.target;
     setPaymentPage(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
 
     if (name === 'amountCrypto' && value) {
-        convertCryptoToUSD(value);
-      } else if (name === 'amountUSD' && value) {
-        convertUSDToCrypto(value);
-      }
+      convertCryptoToUSD(value);
+    } else if (name === 'amountUSD' && value) {
+      convertUSDToCrypto(value);
+    }
   };
 
   const convertCryptoToUSD = async (cryptoAmount) => {
@@ -107,7 +114,7 @@ const CreatePaymentPage = () => {
         amountUSD: response.data.amountUSD
       }));
     } catch (err) {
-        setError('Failed to convert crypto to USD: ' + err.response?.data?.Error || err.message);
+      setError('Failed to convert crypto to USD: ' + err.response?.data?.Error || err.message);
     }
   };
 
@@ -124,42 +131,37 @@ const CreatePaymentPage = () => {
         amountCrypto: response.data.amountCrypto
       }));
     } catch (err) {
-        setError('Failed to convert USD to crypto: ' + err.response?.data?.Error || err.message);
+      setError('Failed to convert USD to crypto: ' + err.response?.data?.Error || err.message);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (paymentPage.amountUSD < 100) {
-        setError('Amount USD must be at least 100.');
-        return;
-    }
-    if (paymentPage.amountCrypto < 0.001) {
-        setError('Amount Crypto must be at least 0.001.');
-        return;
+    if (!paymentPage.isDonation && (paymentPage.amountUSD < 100 || paymentPage.amountCrypto < 0.001)) {
+      setError('Amount USD must be at least 100 and Amount Crypto must be at least 0.001.');
+      return;
     }
 
     try {
       const payload = {
         title: paymentPage.title,
         description: paymentPage.description,
-        amountUSD: paymentPage.amountUSD,
-        amountCrypto: paymentPage.amountCrypto,
+        amountUSD: paymentPage.isDonation ? 0 : paymentPage.amountUSD,
+        amountCrypto: paymentPage.isDonation ? 0 : paymentPage.amountCrypto,
         currencyCode: paymentPage.currencyCode,
+        isDonation: paymentPage.isDonation,
         pageId: paymentPage.pageId
       };
 
       if (id) {
-        const response = await axios.put('/PaymentPage/update', payload, {
+        await axios.put('/PaymentPage/update', payload, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
-        console.log(`/PaymentPage/update: ${response}`);
       } else {
-        const response = await axios.post('/PaymentPage/create', payload, {
+        await axios.post('/PaymentPage/create', payload, {
           headers: { Authorization: `Bearer ${auth.accessToken}` }
         });
-        console.log(`/PaymentPage/create: ${response}`);
       }
       navigate('/dashboard');
     } catch (err) {
@@ -179,14 +181,24 @@ const CreatePaymentPage = () => {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Navigation  />
+    <Box sx={{ bgcolor: '#FAF8FC', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#003366', fontFamily: 'Montserrat, sans-serif' }}>
+    <Navigation />
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          minHeight="80vh"
+          maxWidth="sm"
+          mx="auto"
+        >
       <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
         {id ? 'Update' : 'Create'} Payment Page
       </Typography>
       {error && <Typography color="error">{error}</Typography>}
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-      <TextField
+        <TextField
           fullWidth
           label="Title"
           name="title"
@@ -204,26 +216,42 @@ const CreatePaymentPage = () => {
           margin="normal"
           required
         />
-        <TextField
-          fullWidth
-          label="Amount USD"
-          name="amountUSD"
-          value={paymentPage.amountUSD}
-          onChange={handleChange}
-          margin="normal"
-          required
-          disabled={!!id} // Disable amount fields when editing
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={paymentPage.isDonation}
+              onChange={handleChange}
+              name="isDonation"
+              color="primary"
+              disabled={!!id} // Disable when updating
+            />
+          }
+          label="Is Donation"
         />
-        <TextField
-          fullWidth
-          label="Amount Crypto"
-          name="amountCrypto"
-          value={paymentPage.amountCrypto}
-          onChange={handleChange}
-          margin="normal"
-          required
-          disabled={!!id} // Disable amount fields when editing
-        />
+        {!paymentPage.isDonation && (
+          <>
+            <TextField
+              fullWidth
+              label="Amount USD"
+              name="amountUSD"
+              value={paymentPage.amountUSD}
+              onChange={handleChange}
+              margin="normal"
+              required
+              disabled={!!id} // Disable amount fields when editing
+            />
+            <TextField
+              fullWidth
+              label="Amount Crypto"
+              name="amountCrypto"
+              value={paymentPage.amountCrypto}
+              onChange={handleChange}
+              margin="normal"
+              required
+              disabled={!!id} // Disable amount fields when editing
+            />
+          </>
+        )}
         <Select
           fullWidth
           label="Currency Code"
@@ -237,14 +265,14 @@ const CreatePaymentPage = () => {
           <MenuItem value="BTC">BTC</MenuItem>
           <MenuItem value="ETH">ETH</MenuItem>
         </Select>
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, bgcolor: '#003366', color: '#FAF8FC'  }}>
           {id ? 'Update' : 'Create'} Payment Page
         </Button>
         {id && (
           <Button
             variant="contained"
-            color="secondary"
-            sx={{ mt: 2, ml: 2 }}
+            color="primary"
+            sx={{ mt: 2, ml: 2, bgcolor: '#E65B40', color: '#FAF8FC'  }}
             onClick={() => setOpenDeleteDialog(true)}
           >
             Delete Payment Page
@@ -255,22 +283,22 @@ const CreatePaymentPage = () => {
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle sx={{ color: '#003366' }}>Confirm Delete</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ color: '#E65B40' }}>
             Are you sure you want to delete this payment page? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+          <Button onClick={() => setOpenDeleteDialog(false)} color="primary" sx={{ color: '#003366' }}>
             Cancel
           </Button>
-          <Button onClick={handleDelete} color="secondary">
-            Delete
-          </Button>
+          <Button onClick={handleDelete} color="secondary" sx={{ color: '#E65B40' }}>Delete</Button>
         </DialogActions>
       </Dialog>
+        </Box>
     </Container>
+    </Box>
   );
 };
 
