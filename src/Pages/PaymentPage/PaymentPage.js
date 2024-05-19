@@ -51,7 +51,7 @@ const PaymentPage = () => {
 
     try {
       const requestBody = {
-        pageId: paymentPage.id,
+        pageId: id,
         type: paymentPage.amountDetails.currency.currencyCode.toLowerCase(),
         fromWallet: guestWalletAddress,
         toWallet: paymentPage.systemWallet.walletNumber,

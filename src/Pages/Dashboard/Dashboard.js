@@ -151,7 +151,11 @@ const Dashboard = () => {
                 {paymentPages.map((page) => (
                   <TableRow key={page.id}>
                     <TableCell sx={{ color: '#003366' }}>{page.id}</TableCell>
-                    <TableCell sx={{ color: '#003366' }}>{page.title}</TableCell>
+                    <TableCell>
+                      <Link component={RouterLink} to={`/payment-page-transactions/${page.id}`} sx={{ color: '#003366' }}>
+                        {page.title}
+                      </Link>
+                    </TableCell>
                     <TableCell sx={{ color: '#003366', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>{page.description}</TableCell>
                     <TableCell sx={{ color: '#003366' }}>{page.isDonation ? '-' : page.amountDetails.amountUSD}</TableCell>
                     <TableCell sx={{ color: '#003366' }}>{page.isDonation ? '-' : page.amountDetails.amountCrypto}</TableCell>

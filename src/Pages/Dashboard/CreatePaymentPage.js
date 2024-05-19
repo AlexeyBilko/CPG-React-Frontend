@@ -138,7 +138,7 @@ const CreatePaymentPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!paymentPage.isDonation && (paymentPage.amountUSD < 100 || paymentPage.amountCrypto < 0.001)) {
+    if (!paymentPage.isDonation && (paymentPage.amountUSD < 10 || paymentPage.amountCrypto < 0.00001)) {
       setError('Amount USD must be at least 100 and Amount Crypto must be at least 0.001.');
       return;
     }
