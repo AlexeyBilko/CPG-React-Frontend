@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, AppBar, Divider, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, Link, Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, MenuItem } from '@mui/material';
+import { Container, AppBar, Divider, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, Link, Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, MenuItem, IconButton, CircularProgress } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import axios from '../../api/axios';
 import useAuth from '../../hooks/useAuth';
 import { Link as RouterLink } from 'react-router-dom';
+import UpdateIcon from '@mui/icons-material/Update';
 
 const Navigation = ({ handleLogout }) => {
   const theme = useTheme();
@@ -49,6 +50,7 @@ const EarningsPage = () => {
   const [withdrawWallet, setWithdrawWallet] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(false); // New state variable for loading
   const auth = useAuth();
 
   useEffect(() => {
@@ -76,7 +78,6 @@ const EarningsPage = () => {
           setError('Failed to fetch withdrawals');
         }
       }
-      
     };
 
     fetchEarnings();
@@ -99,6 +100,7 @@ const EarningsPage = () => {
       return;
     }
   
+    setLoading(true);
     try {
       await axios.post('/Earnings/withdraw-earnings', {
         WalletNumber: withdrawWallet,
@@ -108,12 +110,33 @@ const EarningsPage = () => {
         headers: { Authorization: `Bearer ${auth.accessToken}` }
       });
       setOpenWithdrawDialog(false);
-      setWithdrawError(''); // Reset the error message on successful withdrawal
+      setWithdrawError('');
+      window.location.reload();
     } catch (err) {
       setWithdrawError('Failed to withdraw earnings');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleUpdateStatus = async (transactionId) => {
+    try {
+      const response = await axios.get(`/Earnings/check-transaction-status/${transactionId}`, {
+        headers: { Authorization: `Bearer ${auth.accessToken}` }
+      });
+
+      const updatedStatus = response.data.Status;
+      const completedDate = response.data.CompletedDate;
   
+      setWithdrawals(prevWithdrawals => 
+        prevWithdrawals.map(w => 
+          w.id === transactionId ? { ...w, status: updatedStatus, completedDate: completedDate ? new Date(completedDate) : w.completedDate } : w
+        )
+      );
+    } catch (err) {
+      setError('Failed to update transaction status');
+    }
+  };
 
   const handleGenerateReport = async () => {
     try {
@@ -193,8 +216,7 @@ const EarningsPage = () => {
         <Divider sx={{ my: 4 }} />
         <Typography variant="h4" sx={{ mb: 2, color: '#003366' }}>Withdrawal History</Typography>
         {withdrawals.length === 0 ? (
-          <Typography variant="body1">No withdrawals made yet.</Typography>
-        ) : (
+          <Typography variant="body1">No withdrawals made yet.</Typography>) : (
           <Table sx={{ minWidth: 650, bgcolor: '#FAF8FC', borderRadius: 2 }}>
             <TableHead>
               <TableRow>
@@ -204,6 +226,8 @@ const EarningsPage = () => {
                 <TableCell sx={{ color: '#003366' }}>Status</TableCell>
                 <TableCell sx={{ color: '#003366' }}>Requested Date</TableCell>
                 <TableCell sx={{ color: '#003366' }}>Completed Date</TableCell>
+                <TableCell sx={{ color: '#003366' }}>Transaction Hash</TableCell>
+                <TableCell sx={{ color: '#003366' }}>Update Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -213,8 +237,25 @@ const EarningsPage = () => {
                   <TableCell sx={{ color: '#003366' }}>{withdrawal.amountDetails.amountCrypto}</TableCell>
                   <TableCell sx={{ color: '#003366' }}>{withdrawal.amountDetails.currency.currencyCode}</TableCell>
                   <TableCell sx={{ color: '#003366' }}>{withdrawal.status}</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>{new Date(withdrawal.requestedDate).toLocaleDateString()}</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>{new Date(withdrawal.requestedDate).toLocaleString()}</TableCell>
                   <TableCell sx={{ color: '#003366' }}>{withdrawal.completedDate ? new Date(withdrawal.completedDate).toLocaleDateString() : 'Pending'}</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>
+                    <Link 
+                      href={withdrawal.amountDetails.currency.currencyCode === 'BTC' ? 
+                        `https://live.blockcypher.com/btc-testnet/tx/${withdrawal.transactionId}` : 
+                        `https://sepolia.etherscan.io/tx/${withdrawal.transactionId}`
+                      } 
+                      target="_blank" 
+                      sx={{ color: '#003366' }}
+                    >
+                      {`${withdrawal.transactionId.slice(0, 6)}...`}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleUpdateStatus(withdrawal.id)} sx={{ color: '#003366' }}>
+                      <UpdateIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -275,7 +316,7 @@ const EarningsPage = () => {
               Cancel
             </Button>
             <Button onClick={handleWithdraw} color="primary">
-              Withdraw
+              {loading ? <CircularProgress size={24} /> : 'Withdraw'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -285,3 +326,4 @@ const EarningsPage = () => {
 };
 
 export default EarningsPage;
+
