@@ -48,11 +48,11 @@ const PaymentPageTransactions = () => {
           {transactions.map((transaction) => (
             <TableRow key={transaction.id}>
               <TableCell>{transaction.id}</TableCell>
-              <TableCell>{transaction.fromWallet}</TableCell>
-              <TableCell>{transaction.toWallet}</TableCell>
-              <TableCell>{transaction.amount}</TableCell>
+              <TableCell>{transaction.senderWalletAddress}</TableCell>
+              <TableCell>{transaction.paymentPage.systemWallet.walletNumber}</TableCell>
+              <TableCell>{transaction.actualAmountCrypto}</TableCell>
               <TableCell>{transaction.status}</TableCell>
-              <TableCell>{new Date(transaction.timestamp).toLocaleString()}</TableCell>
+              <TableCell>{new Date(transaction.blockTimestamp).toLocaleString()}</TableCell>
             </TableRow>
           ))}
         </TableBody>

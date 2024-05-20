@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  Container, AppBar, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow,
+  Container, AppBar, Divider, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow,
   IconButton, Link, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Box, useMediaQuery
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -118,7 +118,7 @@ const Dashboard = () => {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {error && <Typography color="error">{error}</Typography>}
         <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
-          Dashboard
+          Мої платіжні сторінки
         </Typography>
         <Button
           component={RouterLink}
@@ -126,11 +126,11 @@ const Dashboard = () => {
           variant="contained"
           sx={{ mb: 2, bgcolor: '#003366', color: '#FAF8FC' }}
         >
-          Create Payment Page
+          Створити Нову Платіжну Сторінку
         </Button>
         {paymentPages.length === 0 ? (
-          <Typography variant="body1" sx={{ mt: 4 }}>
-            You haven't created any payment pages yet. You can create one by pressing "Create Payment Page".
+          <Typography variant="body1" sx={{ mt: 4, textAlign: 'center', color: '#003366' }}>
+            Ви ще не створили жодної платіжнох сторінки. Ви можете це зробити натиснувши "Створити нову платіжну сторінку".
           </Typography>
         ) : (
           <Box sx={{ overflowX: 'auto' }}>
@@ -138,13 +138,13 @@ const Dashboard = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ color: '#003366' }}>ID</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Title</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Description</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Amount USD</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Amount Crypto</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Currency Code</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Is Donation</TableCell>
-                  <TableCell sx={{ color: '#003366' }}>Actions</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>Назва</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>Опис</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>К-ть USD</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>К-ть криптовалюти</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>Криптовалюта</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>Благодійний збір?</TableCell>
+                  <TableCell sx={{ color: '#003366' }}>Дії</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -160,9 +160,9 @@ const Dashboard = () => {
                     <TableCell sx={{ color: '#003366' }}>{page.isDonation ? '-' : page.amountDetails.amountUSD}</TableCell>
                     <TableCell sx={{ color: '#003366' }}>{page.isDonation ? '-' : page.amountDetails.amountCrypto}</TableCell>
                     <TableCell sx={{ color: '#003366' }}>{page.amountDetails.currency.currencyCode}</TableCell>
-                    <TableCell sx={{ color: '#003366' }}>{page.isDonation ? 'Yes' : 'No'}</TableCell>
+                    <TableCell sx={{ color: '#003366' }}>{page.isDonation ? 'Так' : 'Ні'}</TableCell>
                     <TableCell sx={{ color: '#003366', whiteSpace: 'nowrap' }}>
-                      <IconButton onClick={() => navigate(`/payment/${page.id}`)} sx={{ color: '#003366' }}><PreviewIcon /></IconButton>
+                    <IconButton onClick={() => window.open(`/payment/${page.id}`, '_blank')} sx={{ color: '#003366' }}><PreviewIcon /></IconButton>
                       <IconButton onClick={() => navigate(`/edit-payment-page/${page.id}`)} sx={{ color: '#003366' }}><EditIcon /></IconButton>
                       <IconButton onClick={() => handleClickOpen(page.id)} sx={{ color: '#003366' }}><DeleteIcon /></IconButton>
                     </TableCell>
@@ -193,9 +193,11 @@ const Dashboard = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        <Divider sx={{ my: 4, mt: 14 }} />
         <Typography variant="body1" sx={{ mt: 4, textAlign: 'center', color: '#003366' }}>
-          Our project aims to simplify cryptocurrency payments, making them as easy as traditional methods.
+        Наш проект має на меті спростити налаштування і оплату криптовалютних рахунків, зробивши їх доступними для більшого кола користувачів.
         </Typography>
+        <Divider sx={{ my: 4 }} />
       </Container>
     </Box>
   );

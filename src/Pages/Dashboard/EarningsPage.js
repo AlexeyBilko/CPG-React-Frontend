@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, AppBar, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, Link, Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from '@mui/material';
+import { Container, AppBar, Divider, Toolbar, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, Link, Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import axios from '../../api/axios';
@@ -41,12 +41,14 @@ const EarningsPage = () => {
   const [earnings, setEarnings] = useState(null);
   const [withdrawals, setWithdrawals] = useState([]);
   const [error, setError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+  const [walletError, setWalletError] = useState('');
   const [openWithdrawDialog, setOpenWithdrawDialog] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawCurrency, setWithdrawCurrency] = useState('BTC');
   const [withdrawWallet, setWithdrawWallet] = useState('');
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const auth = useAuth();
 
   useEffect(() => {
@@ -68,8 +70,13 @@ const EarningsPage = () => {
         });
         setWithdrawals(response.data);
       } catch (err) {
-        setError('Failed to fetch withdrawals');
+        if (err.response.data === "No withdrawal history found." && err.response.status === 404) {
+          console.log('No withdrawals found for this user.');
+        } else {
+          setError('Failed to fetch withdrawals');
+        }
       }
+      
     };
 
     fetchEarnings();
@@ -77,6 +84,21 @@ const EarningsPage = () => {
   }, [auth.accessToken]);
 
   const handleWithdraw = async () => {
+    if (!withdrawWallet) {
+      setWalletError('Wallet address is required');
+      return;
+    }
+
+    if (withdrawCurrency === 'BTC' && parseFloat(withdrawAmount) > earnings.currentBalanceBTC) {
+      setWithdrawError(`Insufficient balance. Current BTC balance: ${earnings.currentBalanceBTC}`);
+      return;
+    }
+  
+    if (withdrawCurrency === 'ETH' && parseFloat(withdrawAmount) > earnings.currentBalanceETH) {
+      setWithdrawError(`Insufficient balance. Current ETH balance: ${earnings.currentBalanceETH}`);
+      return;
+    }
+  
     try {
       await axios.post('/Earnings/withdraw-earnings', {
         WalletNumber: withdrawWallet,
@@ -86,17 +108,19 @@ const EarningsPage = () => {
         headers: { Authorization: `Bearer ${auth.accessToken}` }
       });
       setOpenWithdrawDialog(false);
+      setWithdrawError(''); // Reset the error message on successful withdrawal
     } catch (err) {
-      setError('Failed to withdraw earnings');
+      setWithdrawError('Failed to withdraw earnings');
     }
   };
+  
 
   const handleGenerateReport = async () => {
     try {
       const response = await axios.get('/Earnings/generate-earnings-report', {
         params: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
+          startDate: startDate,
+          endDate: endDate
         },
         headers: { Authorization: `Bearer ${auth.accessToken}` }
       });
@@ -130,23 +154,46 @@ const EarningsPage = () => {
       <Navigation handleLogout={handleLogout} />
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {error && <Typography color="error">{error}</Typography>}
-        <Typography variant="h4" sx={{ mb: 2, color: '#003366' }}>Earnings</Typography>
+        <Typography variant="h4" sx={{ mb: 2, color: '#003366' }}>Earnings Information</Typography>
         {earnings && (
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6">Total Earnings</Typography>
-            <Typography variant="body1">BTC: {earnings.TotalEarningsBtc}</Typography>
-            <Typography variant="body1">ETH: {earnings.TotalEarningsEth}</Typography>
-            <Typography variant="body1">USD: {earnings.TotalEarningsUsd}</Typography>
+            <Typography variant="body1">Total Earned BTC: {earnings.totalEarnedBTC}</Typography>
+            <Typography variant="body1">Total Earned ETH: {earnings.totalEarnedETH}</Typography>
+            <Typography variant="h6">Current Balance</Typography>
+            <Typography variant="body1">Current Balance BTC: {earnings.currentBalanceBTC}</Typography>
+            <Typography variant="body1">Current Balance ETH: {earnings.currentBalanceETH}</Typography>
           </Box>
         )}
         <Button variant="contained" sx={{ mb: 2, bgcolor: '#003366', color: '#FAF8FC' }} onClick={() => setOpenWithdrawDialog(true)}>
           Withdraw Earnings
         </Button>
+        <Divider sx={{ my: 4 }} />
+        <Box sx={{ display: 'flex', my: 2 }}>
+          <TextField
+            label="Start Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            sx={{ mr: 2 }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            sx={{ mr: 2 }}
+          />
+        </Box>
         <Button variant="contained" sx={{ mb: 2, bgcolor: '#003366', color: '#FAF8FC' }} onClick={handleGenerateReport}>
           Generate PDF Report
         </Button>
+        <Divider sx={{ my: 4 }} />
+        <Typography variant="h4" sx={{ mb: 2, color: '#003366' }}>Withdrawal History</Typography>
         {withdrawals.length === 0 ? (
-          <Typography variant="body1">You have no withdrawal history.</Typography>
+          <Typography variant="body1">No withdrawals made yet.</Typography>
         ) : (
           <Table sx={{ minWidth: 650, bgcolor: '#FAF8FC', borderRadius: 2 }}>
             <TableHead>
@@ -173,6 +220,7 @@ const EarningsPage = () => {
             </TableBody>
           </Table>
         )}
+        <Divider sx={{ my: 4 }} />
         <Dialog
           open={openWithdrawDialog}
           onClose={() => setOpenWithdrawDialog(false)}
@@ -181,7 +229,14 @@ const EarningsPage = () => {
           <DialogContent>
             <DialogContentText>
               Enter the details to withdraw your earnings.
-              </DialogContentText>
+            </DialogContentText>
+            {withdrawError && <Typography color="error">{withdrawError}</Typography>}
+            <Typography variant="body1">
+              Current Balance BTC: {earnings ? earnings.currentBalanceBTC : 'Loading...'}
+            </Typography>
+            <Typography variant="body1">
+              Current Balance ETH: {earnings ? earnings.currentBalanceETH : 'Loading...'}
+            </Typography>
             <TextField
               autoFocus
               margin="dense"
@@ -192,6 +247,17 @@ const EarningsPage = () => {
               onChange={(e) => setWithdrawAmount(e.target.value)}
             />
             <TextField
+              select
+              margin="dense"
+              label="Currency"
+              fullWidth
+              value={withdrawCurrency}
+              onChange={(e) => setWithdrawCurrency(e.target.value)}
+            >
+              <MenuItem value="BTC">BTC</MenuItem>
+              <MenuItem value="ETH">ETH</MenuItem>
+            </TextField>
+            <TextField
               margin="dense"
               label="Wallet Address"
               type="text"
@@ -199,14 +265,10 @@ const EarningsPage = () => {
               value={withdrawWallet}
               onChange={(e) => setWithdrawWallet(e.target.value)}
             />
-            <TextField
-              margin="dense"
-              label="Currency (BTC/ETH)"
-              type="text"
-              fullWidth
-              value={withdrawCurrency}
-              onChange={(e) => setWithdrawCurrency(e.target.value)}
-            />
+            {walletError && <Typography color="error">{walletError}</Typography>}
+            <DialogContentText sx={{ mt: 2, color: '#E65B40' }}>
+              It's very important to paste your correct address in the correct cryptocurrency. If there's a mistake, the crypto will be lost.
+            </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenWithdrawDialog(false)} color="primary">
